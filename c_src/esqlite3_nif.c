@@ -278,7 +278,9 @@ do_exec(ErlNifEnv *env, esqlite_connection *conn, const ERL_NIF_TERM arg)
     if(rc != SQLITE_OK)
 	    return make_sqlite3_error_tuple(env, rc, conn->db);
 
-    return make_atom(env, "ok");
+    sqlite3_int64 affected_rows = sqlite3_changes(conn->db);
+    ERL_NIF_TERM affected_rows_term = enif_make_int64(env, affected_rows);
+    return make_ok_tuple(env, affected_rows_term);
 }
 
 /*
