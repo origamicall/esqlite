@@ -483,18 +483,21 @@ make_row(ErlNifEnv *env, sqlite3_stmt *statement)
 }
 
 static ERL_NIF_TERM
-do_step(ErlNifEnv *env, sqlite3 *db, sqlite3_stmt *stmt)
+do_step(ErlNifEnv *env, esqlite_connection *conn, sqlite3_stmt *stmt)
 {
     int rc = sqlite3_step(stmt);
 
     if(rc == SQLITE_ROW) 
         return make_row(env, stmt);
-    if(rc == SQLITE_DONE) 
-	    return make_atom(env, "$done");
+    if(rc == SQLITE_DONE) {
+        sqlite3_int64 affected_rows = sqlite3_changes(conn->db);
+        ERL_NIF_TERM affected_rows_term = enif_make_int64(env, affected_rows);
+        return make_ok_tuple(env, affected_rows_term);
+    }
     if(rc == SQLITE_BUSY)
 	    return make_atom(env, "$busy");
 
-    return make_sqlite3_error_tuple(env, rc, db);
+    return make_sqlite3_error_tuple(env, rc, conn->db);
 }
 
 static ERL_NIF_TERM
@@ -545,7 +548,7 @@ evaluate_command(esqlite_command *cmd, esqlite_connection *conn)
     case cmd_prepare:
 	    return do_prepare(cmd->env, conn, cmd->arg);
     case cmd_step:
-	    return do_step(cmd->env, conn->db, cmd->stmt);
+	    return do_step(cmd->env, conn, cmd->stmt);
     case cmd_bind:
 	    return do_bind(cmd->env, conn->db, cmd->stmt, cmd->arg);
     case cmd_column_names:

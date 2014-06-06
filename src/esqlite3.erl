@@ -121,7 +121,7 @@ foreach(F, Sql, Connection) ->
     ColumnNames :: tuple().
 foreach_s(F, Statement) when is_function(F, 1) -> 
     case try_step(Statement, 0) of
-        '$done' -> ok;
+        {ok, _AffectedRows} -> ok;
         {row, Row} ->
             F(Row),
             foreach_s(F, Statement)
@@ -129,7 +129,7 @@ foreach_s(F, Statement) when is_function(F, 1) ->
 foreach_s(F, Statement) when is_function(F, 2) ->
     ColumnNames = column_names(Statement),
     case try_step(Statement, 0) of
-        '$done' -> ok;
+        {ok, _AffectedRows} -> ok;
         {row, Row} -> 
             F(ColumnNames, Row),
             foreach_s(F, Statement)
@@ -143,14 +143,14 @@ foreach_s(F, Statement) when is_function(F, 2) ->
     Type :: term().
 map_s(F, Statement) when is_function(F, 1) ->
     case try_step(Statement, 0) of
-        '$done' -> [];
+        {ok, _AffectedRows} -> [];
         {row, Row} -> 
             [F(Row) | map_s(F, Statement)]
     end;
 map_s(F, Statement) when is_function(F, 2) ->
     ColumnNames = column_names(Statement),
     case try_step(Statement, 0) of
-        '$done' -> [];
+        {ok, _AffectedRows} -> [];
         {row, Row} -> 
             [F(ColumnNames, Row) | map_s(F, Statement)]
     end.
@@ -159,7 +159,7 @@ map_s(F, Statement) when is_function(F, 2) ->
 -spec fetchone(statement()) -> tuple().
 fetchone(Statement) ->
     case try_step(Statement, 0) of
-        '$done' -> ok;
+        {ok, _AffectedRows} -> ok;
         {row, Row} -> Row
     end.
 
@@ -167,7 +167,7 @@ fetchone(Statement) ->
 -spec fetchall(statement()) -> list(tuple()).
 fetchall(Statement) ->
     case try_step(Statement, 0) of
-        '$done' -> 
+        {ok,_} -> 
             [];
         {row, Row} ->
             [Row | fetchall(Statement)]
